@@ -44,7 +44,7 @@ pub fn get_current_temperature(sensor: &str) -> Result<f32, Box<dyn std::error::
     for chip in sensors.chip_iter(None) {
         if chip.to_string() == chip_name {
             for feature in chip.feature_iter() {
-                if let Some(Ok(name)) = feature.name() {
+                if let Ok(name) = feature.label() {
                     if name == feature_name {
                         for sub_feature in feature.sub_feature_iter() {
                             if let Ok(lm_sensors::Value::TemperatureInput(temp)) =
@@ -70,7 +70,7 @@ pub fn list_available_sensors() -> Vec<String> {
         for chip in lm_sensors.chip_iter(None) {
             let chip_name = chip.to_string();
             for feature in chip.feature_iter() {
-                if let Some(Ok(name)) = feature.name() {
+                if let Ok(name) = feature.label() {
                     sensors.push(format!("{}/{}", chip_name, name));
                 }
             }
