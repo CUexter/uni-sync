@@ -67,8 +67,8 @@
         '';
 
         meta = with pkgs.lib; {
-          description = "Your project description";
-          homepage = "https://github.com/yourusername/uni-sync"; # Update this
+          description = "Uni-sync with fan curves";
+          homepage = "https://github.com/CUexter/uni-sync"; # Update this
           license = licenses.mit; # Update this with your actual license
           maintainers = [ maintainers.yourgithubusername ]; # Update this
         };
@@ -145,9 +145,6 @@
                 ExecStartPre = pkgs.writeScript "uni-sync-init" ''
                   #!${pkgs.stdenv.shell}
                   mkdir -p $(dirname ${cfg.configFile})
-                  if [ ! -f ${cfg.configFile} ]; then
-                    echo '${builtins.toJSON cfg.initialConfig}' > ${cfg.configFile}
-                  fi
                 '';
                 ExecStart = "${self.packages.${pkgs.system}.default}/bin/uni-sync --config ${cfg.configFile}";
                 Restart = "always";
