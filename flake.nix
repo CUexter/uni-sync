@@ -8,13 +8,13 @@
   outputs = { self, nixpkgs }:
     let
       system = "x86_64-linux";
-      pkgs = nixpkgs.legacyPackages.${system};
+      pkgs = import nixpkgs { system = "x86_64-linux"; config.allowUnfree = true; };
       llvmPackages = pkgs.llvmPackages_14;
     in
     {
       packages.${system}.default = pkgs.rustPlatform.buildRustPackage {
         pname = "uni-sync";
-        version = "0.4.0";
+        version = "0.5.0";
         src = ./.;
         cargoLock = {
           lockFile = ./Cargo.lock;
@@ -35,6 +35,7 @@
           lm_sensors
           glibc.dev
           gcc
+          linuxPackages.nvidia_x11
         ];
 
         LIBCLANG_PATH = "${llvmPackages.libclang.lib}/lib";
@@ -49,6 +50,7 @@
             llvmPackages.libclang
             glibc.dev
             gcc.cc.lib
+            linuxPackages.nvidia_x11
           ]}"
           export PKG_CONFIG_PATH="${pkgs.pkg-config}/lib/pkgconfig:${pkgs.lm_sensors}/lib/pkgconfig:${pkgs.systemd.dev}/lib/pkgconfig:$PKG_CONFIG_PATH"
           export SENSORS_LIB_DIR="${pkgs.lm_sensors}/lib"
@@ -59,18 +61,18 @@
             gcc.cc
             systemd.dev
           ]}"
-          export LIBRARY_PATH="${pkgs.lib.makeLibraryPath [ pkgs.lm_sensors pkgs.systemd.dev ]}"
+          export LIBRARY_PATH="${pkgs.lib.makeLibraryPath [ pkgs.lm_sensors pkgs.systemd.dev pkgs.linuxPackages.nvidia_x11]}"
         '';
 
         postInstall = ''
-          patchelf --set-rpath "${pkgs.lm_sensors}/lib:${pkgs.systemd.dev}/lib:${pkgs.udev}/lib:$out/lib" $out/bin/uni-sync
+          patchelf --set-rpath "${pkgs.lm_sensors}/lib:${pkgs.systemd.dev}/lib:${pkgs.udev}/lib:${pkgs.linuxPackages.nvidia_x11}/lib:$out/lib" $out/bin/uni-sync
         '';
 
         meta = with pkgs.lib; {
           description = "Uni-sync with fan curves";
-          homepage = "https://github.com/CUexter/uni-sync"; # Update this
-          license = licenses.mit; # Update this with your actual license
-          maintainers = [ maintainers.yourgithubusername ]; # Update this
+          homepage = "https://github.com/CUexter/uni-sync";
+          license = licenses.mit;
+          maintainers = [ maintainers.cuexter ];
         };
       };
 
@@ -90,6 +92,7 @@
             llvmPackages.libclang
             glibc.dev
             gcc.cc.lib
+            linuxPackages.nvidia_x11
           ]}"
           export PKG_CONFIG_PATH="${pkgs.pkg-config}/lib/pkgconfig:${pkgs.lm_sensors}/lib/pkgconfig:${pkgs.systemd.dev}/lib/pkgconfig:$PKG_CONFIG_PATH"
           export SENSORS_LIB_DIR="${pkgs.lm_sensors}/lib"

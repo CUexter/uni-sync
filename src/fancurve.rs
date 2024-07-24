@@ -1,4 +1,5 @@
 use lm_sensors::{self, Initializer};
+use nvml_wrapper::Nvml;
 use serde_derive::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
@@ -34,6 +35,9 @@ pub fn calculate_fan_speed(fan_curve: &FanCurve, temperature: f32) -> usize {
 pub fn get_current_temperature(sensor: &str) -> Result<f32, Box<dyn std::error::Error>> {
     // Initialize LM sensors library.
     let sensors = Initializer::default().initialize()?;
+    if sensor.starts_with("gpu/") {
+        return get_gpu_temperature(sensor);
+    }
 
     let parts: Vec<&str> = sensor.split('/').collect();
     if parts.len() != 2 {
@@ -61,6 +65,20 @@ pub fn get_current_temperature(sensor: &str) -> Result<f32, Box<dyn std::error::
     Err(format!("Sensor '{}' not found", sensor).into())
 }
 
+fn get_gpu_temperature(sensor: &str) -> Result<f32, Box<dyn std::error::Error>> {
+    let nvml = Nvml::init()?;
+    let parts: Vec<&str> = sensor.split('/').collect();
+    if parts.len() != 2 || parts[0] != "gpu" {
+        return Err("Invalid GPU sensor format. Use 'gpu/index'".into());
+    }
+    
+    let gpu_index: u32 = parts[1].parse()?;
+    let device = nvml.device_by_index(gpu_index)?;
+    let temp = device.temperature(nvml_wrapper::enum_wrappers::device::TemperatureSensor::Gpu)?;
+    
+    Ok(temp as f32)
+}
+
 pub fn list_available_sensors() -> Vec<String> {
     let mut sensors = Vec::new();
     
@@ -74,6 +92,25 @@ pub fn list_available_sensors() -> Vec<String> {
                 }
             }
         }
+    }
+// GPU sensors (using NVML)
+    println!("Trying to initialize NVML");
+    match Nvml::init() {
+        Ok(nvml) => {
+            println!("NVML initialized successfully");
+            match nvml.device_count() {
+                Ok(device_count) => {
+                    println!("Found {} NVIDIA GPU(s)", device_count);
+                    for i in 0..device_count {
+                        let sensor = format!("gpu/{}", i);
+                        println!("Found GPU sensor: {}", sensor);
+                        sensors.push(sensor);
+                    }
+                },
+                Err(e) => println!("Failed to get NVML device count: {:?}", e),
+            }
+        },
+        Err(e) => println!("Failed to initialize NVML: {:?}", e),
     }
     sensors
 }
