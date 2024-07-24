@@ -14,7 +14,7 @@
     {
       packages.${system}.default = pkgs.rustPlatform.buildRustPackage {
         pname = "uni-sync";
-        version = "0.3.2";
+        version = "0.3.4";
         src = ./.;
         cargoLock = {
           lockFile = ./Cargo.lock;
