@@ -14,7 +14,7 @@
     {
       packages.${system}.default = pkgs.rustPlatform.buildRustPackage {
         pname = "uni-sync";
-        version = "0.3.4";
+        version = "0.4.0";
         src = ./.;
         cargoLock = {
           lockFile = ./Cargo.lock;
@@ -117,11 +117,6 @@
               default = "/etc/uni-sync/uni-sync.json";
               description = "Path to the uni-sync configuration file";
             };
-            initialConfig = lib.mkOption {
-              type = lib.types.attrs;
-              default = { };
-              description = "Initial configuration for uni-sync";
-            };
           };
 
           config = lib.mkIf cfg.enable {
@@ -133,9 +128,6 @@
                 ExecStartPre = pkgs.writeScript "uni-sync-init" ''
                   #!${pkgs.stdenv.shell}
                   mkdir -p $(dirname ${cfg.configFile})
-                  if [ ! -f ${cfg.configFile} ]; then
-                    echo '${builtins.toJSON cfg.initialConfig}' > ${cfg.configFile}
-                  fi
                 '';
                 ExecStart = "${self.packages.${pkgs.system}.default}/bin/uni-sync --config ${cfg.configFile}";
                 Restart = "always";

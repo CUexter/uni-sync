@@ -1,14 +1,16 @@
 [package]
 name = "uni-sync"
-version = "0.3.4"
+version = "0.4.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 config = "0.13.3"
+ctrlc = "3.4.4"
 hidapi = "2.4.0"
 lm-sensors = "0.3.0"
+notify = "6.1.1"
 serde = { version = "1.0.171", features = ["derive"] }
 serde_derive = "1.0.174"
 serde_json = "1.0.103"

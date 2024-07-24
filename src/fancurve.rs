@@ -1,6 +1,7 @@
 use lm_sensors::{self, Initializer};
 use serde_derive::{Deserialize, Serialize};
 use std::fs;
+use std::path::Path;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct FanCurve {
@@ -10,7 +11,8 @@ pub struct FanCurve {
 }
 
 pub fn read_fan_curve(file_name: &str) -> Result<FanCurve, Box<dyn std::error::Error>> {
-    let content = fs::read_to_string(file_name)?;
+    let path = Path::new(file_name);
+    let content = fs::read_to_string(path)?;
     let fan_curve: FanCurve = serde_json::from_str(&content)?;
     Ok(fan_curve)
 }
@@ -22,7 +24,6 @@ pub fn calculate_fan_speed(fan_curve: &FanCurve, temperature: f32) -> usize {
             let t2 = fan_curve.temperatures[i];
             let s1 = fan_curve.speeds[i - 1] as f32;
             let s2 = fan_curve.speeds[i] as f32;
-
             // Linear interpolation
             return ((s1 + (s2 - s1) * (temperature - t1) / (t2 - t1)) as usize).min(100);
         }
@@ -47,9 +48,7 @@ pub fn get_current_temperature(sensor: &str) -> Result<f32, Box<dyn std::error::
                 if let Ok(name) = feature.label() {
                     if name == feature_name {
                         for sub_feature in feature.sub_feature_iter() {
-                            if let Ok(lm_sensors::Value::TemperatureInput(temp)) =
-                                sub_feature.value()
-                            {
+                            if let Ok(lm_sensors::Value::TemperatureInput(temp)) = sub_feature.value() {
                                 return Ok(temp as f32);
                             }
                         }
@@ -58,13 +57,13 @@ pub fn get_current_temperature(sensor: &str) -> Result<f32, Box<dyn std::error::
             }
         }
     }
-
+    
     Err(format!("Sensor '{}' not found", sensor).into())
 }
 
 pub fn list_available_sensors() -> Vec<String> {
     let mut sensors = Vec::new();
-
+    
     // Initialize LM sensors library.
     if let Ok(lm_sensors) = Initializer::default().initialize() {
         for chip in lm_sensors.chip_iter(None) {
