@@ -112,11 +112,6 @@
         {
           options.services.uni-sync = {
             enable = lib.mkEnableOption "Uni-Sync service";
-            user = lib.mkOption {
-              type = lib.types.str;
-              default = "uni-sync";
-              description = "User account under which uni-sync runs";
-            };
             configFile = lib.mkOption {
               type = lib.types.path;
               default = "/etc/uni-sync/uni-sync.json";
@@ -130,13 +125,6 @@
           };
 
           config = lib.mkIf cfg.enable {
-            users.users.${cfg.user} = {
-              isSystemUser = true;
-              group = cfg.user;
-              description = "Uni-Sync service user";
-            };
-            users.groups.${cfg.user} = { };
-
             systemd.services.uni-sync = {
               description = "Uni-Sync Service";
               after = [ "network.target" ];
@@ -145,10 +133,13 @@
                 ExecStartPre = pkgs.writeScript "uni-sync-init" ''
                   #!${pkgs.stdenv.shell}
                   mkdir -p $(dirname ${cfg.configFile})
+                  if [ ! -f ${cfg.configFile} ]; then
+                    echo '${builtins.toJSON cfg.initialConfig}' > ${cfg.configFile}
+                  fi
                 '';
                 ExecStart = "${self.packages.${pkgs.system}.default}/bin/uni-sync --config ${cfg.configFile}";
                 Restart = "always";
-                User = cfg.user;
+                User = "root";
               };
             };
           };
